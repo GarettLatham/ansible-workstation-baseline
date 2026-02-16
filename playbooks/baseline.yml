@@ -4,7 +4,8 @@
   #vars_files:
   #  - ../group_vars/workstation.yml
   roles:
-    - baseline_common
+    - role: baseline_common
+      tags: [baseline_common]
     - baseline_updates
     - baseline_selinux
     - baseline_firewall

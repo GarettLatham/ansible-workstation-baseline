@@ -6,6 +6,9 @@
       - firewalld
       - audit
       - chrony
+      - zsh
+      - tmux
+      - neovim
     state: present
 
 - name: Ensure chronyd is enabled (time sync)

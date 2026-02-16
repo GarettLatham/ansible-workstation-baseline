@@ -158,3 +158,43 @@
     group: "{{ dotfiles_user }}"
     mode: "0644"
   when: role_waybar_style.stat.exists
+
+- name: Ensure default shell is zsh for user1
+  user:
+    name: "{{ dotfiles_user }}"
+    shell: /bin/zsh
+- name: Check if role zshrc exists
+  stat:
+    path: "{{ role_path }}/files/zsh/.zshrc"
+  register: role_zshrc
+
+- name: Install .zshrc
+  copy:
+    src: zsh/.zshrc
+    dest: "{{ dotfiles_home }}/.zshrc"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  when: role_zshrc.stat.exists
+
+- name: Ensure ~/.config/alacritty exists
+  file:
+    path: "{{ dotfiles_home }}/.config/alacritty"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+
+- name: Check if alacritty config exists in role
+  stat:
+    path: "{{ role_path }}/files/config/alacritty/alacritty.toml"
+  register: role_alacritty
+
+- name: Install alacritty config
+  copy:
+    src: config/alacritty/alacritty.toml
+    dest: "{{ dotfiles_home }}/.config/alacritty/alacritty.toml"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  when: role_alacritty.stat.exists
