@@ -1,0 +1,27 @@
+- name: Create modprobe blacklist config (protocols)
+  ansible.builtin.copy:
+    dest: /etc/modprobe.d/baseline-blacklist.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by workstation-baseline (Ansible)
+      {% if disable_unused_network_protocols | default(false) | bool %}
+      {% for m in (blacklist_kernel_modules | default([])) %}
+      install {{ m }} /bin/false
+      blacklist {{ m }}
+      {% endfor %}
+      {% endif %}
+
+- name: Attempt to unload blacklisted modules if currently loaded (best effort)
+  ansible.builtin.shell: |
+    set -e
+    for m in {{ (blacklist_kernel_modules | default([])) | unique | join(' ') }}; do
+      if lsmod | awk '{print $1}' | grep -qx "$m"; then
+        modprobe -r "$m" || true
+      fi
+    done
+  args:
+    executable: /bin/bash
+  changed_when: false
+  when: disable_unused_network_protocols | default(false) | bool

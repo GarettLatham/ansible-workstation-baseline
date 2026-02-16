@@ -1,0 +1,17 @@
+- name: Enable and start firewalld
+  ansible.builtin.systemd:
+    name: firewalld
+    enabled: true
+    state: started
+
+- name: Set default firewalld zone
+  ansible.builtin.command: "firewall-cmd --set-default-zone={{ firewalld_default_zone }}"
+  changed_when: false
+
+- name: Enable SSH service if configured
+  ansible.posix.firewalld:
+    service: ssh
+    zone: "{{ firewalld_default_zone }}"
+    permanent: true
+    state: enabled
+  when: firewalld_enable_ssh | bool

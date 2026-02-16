@@ -1,0 +1,72 @@
+- name: Install AIDE
+  ansible.builtin.dnf:
+    name: aide
+    state: present
+  when: enable_aide | default(false) | bool
+
+- name: Initialize AIDE database if missing
+  ansible.builtin.shell: |
+    set -e
+    if [ ! -f /var/lib/aide/aide.db.gz ] && [ ! -f /var/lib/aide/aide.db.new.gz ]; then
+      aide --init
+      if [ -f /var/lib/aide/aide.db.new.gz ]; then
+        mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+      fi
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: false
+  when: enable_aide | default(false) | bool
+
+- name: Create AIDE check service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/baseline-aide.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Baseline AIDE integrity check
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/sbin/aide --check
+  when:
+    - enable_aide | default(false) | bool
+    - aide_run_daily | default(false) | bool
+
+- name: Create AIDE daily timer
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/baseline-aide.timer
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Run baseline-aide daily
+
+      [Timer]
+      OnCalendar=daily
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+  when:
+    - enable_aide | default(false) | bool
+    - aide_run_daily | default(false) | bool
+
+- name: Reload systemd and enable AIDE timer
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when:
+    - enable_aide | default(false) | bool
+    - aide_run_daily | default(false) | bool
+
+- name: Enable and start AIDE timer
+  ansible.builtin.systemd:
+    name: baseline-aide.timer
+    enabled: true
+    state: started
+  when:
+    - enable_aide | default(false) | bool
+    - aide_run_daily | default(false) | bool

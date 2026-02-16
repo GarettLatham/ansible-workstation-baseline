@@ -1,0 +1,7 @@
+- name: Disable selected services if installed
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+  loop: "{{ services_disabled_by_default }}"
+  ignore_errors: true

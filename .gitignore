@@ -1,0 +1,12 @@
+*.retry
+.vault_pass
+vault_pass.txt
+
+# Secrets
+.env
+*.key
+*.pem
+id_rsa*
+
+# OS
+.DS_Store

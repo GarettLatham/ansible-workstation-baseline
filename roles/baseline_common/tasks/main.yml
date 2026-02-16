@@ -1,0 +1,15 @@
+- name: Ensure baseline packages are installed
+  ansible.builtin.dnf:
+    name:
+      - policycoreutils
+      - policycoreutils-python-utils
+      - firewalld
+      - audit
+      - chrony
+    state: present
+
+- name: Ensure chronyd is enabled (time sync)
+  ansible.builtin.systemd:
+    name: chronyd
+    enabled: true
+    state: started

@@ -1,0 +1,17 @@
+- name: Fedora Workstation Baseline
+  hosts: workstation
+  become: true
+  #vars_files:
+  #  - ../group_vars/workstation.yml
+  roles:
+    - baseline_common
+    - baseline_updates
+    - baseline_selinux
+    - baseline_firewall
+    - baseline_sysctl
+    - baseline_audit
+    - baseline_services
+    - baseline_kernel_modules
+    - baseline_umask
+    - baseline_integrity_aide
+    - baseline_malware_scanner

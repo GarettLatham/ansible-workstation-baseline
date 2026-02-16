@@ -1,0 +1,129 @@
+- name: Install dnf-automatic (automatic updates)
+  ansible.builtin.dnf:
+    name: dnf-automatic
+    state: present
+  when: enable_automatic_updates | default(false) | bool
+
+# In --check mode, shell/command tasks may be skipped unless we force them.
+- name: Detect dnf-automatic timer unit files (if any)
+  ansible.builtin.shell: |
+    systemctl list-unit-files --type=timer --no-legend | awk '{print $1}' | grep -E '^dnf-automatic.*\.timer$' || true
+  register: dnf_automatic_timers
+  changed_when: false
+  check_mode: false
+  when: enable_automatic_updates | default(false) | bool
+
+- name: Choose preferred packaged dnf-automatic timer if present
+  ansible.builtin.set_fact:
+    dnf_automatic_timer_to_enable: >-
+      {{
+        'dnf-automatic-install.timer'
+          if ('dnf-automatic-install.timer' in dnf_automatic_timers.stdout_lines)
+          else (
+            'dnf-automatic.timer'
+              if ('dnf-automatic.timer' in dnf_automatic_timers.stdout_lines)
+              else (
+                dnf_automatic_timers.stdout_lines[0]
+                  if (dnf_automatic_timers.stdout_lines | length > 0)
+                  else ''
+              )
+          )
+      }}
+  when: enable_automatic_updates | default(false) | bool
+
+- name: Enable packaged dnf-automatic timer when available
+  ansible.builtin.systemd:
+    name: "{{ dnf_automatic_timer_to_enable }}"
+    enabled: true
+    state: started
+  when:
+    - enable_automatic_updates | default(false) | bool
+    - dnf_automatic_timer_to_enable | length > 0
+
+# --- Fallback: create our own timer if Fedora doesn't provide one ---
+
+- name: Install baseline dnf-automatic configuration
+  ansible.builtin.copy:
+    dest: /etc/dnf/automatic.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [commands]
+      upgrade_type = default
+      random_sleep = 0
+      download_updates = yes
+      apply_updates = yes
+
+      [emitters]
+      system_name = None
+      emit_via = stdio
+
+      [email]
+      email_from = root
+      email_to = root
+      email_host = localhost
+
+      [base]
+      debuglevel = 1
+  when:
+    - enable_automatic_updates | default(false) | bool
+    - dnf_automatic_timer_to_enable | length == 0
+
+- name: Create custom dnf-automatic systemd service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/baseline-updates.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Baseline automatic updates (dnf-automatic)
+      Wants=network-online.target
+      After=network-online.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/dnf-automatic /etc/dnf/automatic.conf
+  when:
+    - enable_automatic_updates | default(false) | bool
+    - dnf_automatic_timer_to_enable | length == 0
+
+- name: Create custom systemd timer for baseline updates
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/baseline-updates.timer
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Run baseline-updates daily
+
+      [Timer]
+      OnCalendar=daily
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+  when:
+    - enable_automatic_updates | default(false) | bool
+    - dnf_automatic_timer_to_enable | length == 0
+
+- name: Reload systemd so it sees new unit files
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when:
+    - enable_automatic_updates | default(false) | bool
+    - dnf_automatic_timer_to_enable | length == 0
+  check_mode: false
+
+- name: Enable and start custom baseline updates timer
+  ansible.builtin.systemd:
+    name: baseline-updates.timer
+    enabled: true
+    state: started
+    daemon_reload: true
+  when:
+    - enable_automatic_updates | default(false) | bool
+    - dnf_automatic_timer_to_enable | length == 0
+    - not ansible_check_mode

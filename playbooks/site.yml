@@ -1,0 +1,5 @@
+- import_playbook: baseline.yml
+# Later:
+# - import_playbook: devtools.yml
+# - import_playbook: vpn.yml
+# - import_playbook: backups.yml

@@ -1,0 +1,6 @@
+- name: Ensure auditd is enabled and started
+  ansible.builtin.systemd:
+    name: auditd
+    enabled: true
+    state: started
+  when: enable_system_auditing | bool

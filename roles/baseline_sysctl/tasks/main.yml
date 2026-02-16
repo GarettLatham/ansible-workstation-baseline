@@ -1,0 +1,7 @@
+- name: Apply sysctl baseline values
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    sysctl_set: true
+    reload: true
+  loop: "{{ sysctl_baseline | dict2items }}"

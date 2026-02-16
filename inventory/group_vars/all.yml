@@ -1,0 +1,47 @@
+---
+# Baseline knobs (loaded for all hosts)
+
+# Firewall
+firewalld_default_zone: public
+firewalld_enable_ssh: true
+
+# Services to disable if present (adjust for your laptop)
+services_disabled_by_default:
+  - bluetooth
+  - cups
+
+# Kernel/sysctl baseline (desktop-safe)
+sysctl_baseline:
+  kernel.kptr_restrict: 2
+  kernel.dmesg_restrict: 1
+  fs.protected_hardlinks: 1
+  fs.protected_symlinks: 1
+  net.ipv4.conf.all.rp_filter: 1
+  net.ipv4.tcp_syncookies: 1
+
+# Automatic updates
+enable_automatic_updates: true
+
+# Auditing
+enable_system_auditing: true
+
+
+# Disable unused network protocols
+disable_unused_network_protocols: true
+blacklist_kernel_modules:
+  - dccp
+  - sctp
+  - rds
+  - tipc
+
+# Tighten umask
+set_default_umask: true
+default_umask: "027"
+
+# File integrity
+enable_aide: true
+aide_run_daily: true
+
+# Rootkit checker (weekly)
+enable_malware_scanner: true
+malware_scanner_package: "chkrootkit"

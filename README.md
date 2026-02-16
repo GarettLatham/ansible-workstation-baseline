@@ -14,3 +14,16 @@ Automated hardened Linux workstation setup using Ansible.
 
 ```bash
 ansible-playbook -i inventories/localhost playbooks/site.yml
+=======
+# Workstation Baseline (Fedora)
+
+A neutral, composable Ansible baseline for a Fedora Workstation laptop.
+
+## Run (dry-run first)
+ansible-playbook -i inventory/workstation.ini playbooks/baseline.yml --check --diff
+
+## Apply
+ansible-playbook -i inventory/workstation.ini playbooks/baseline.yml
+
+## Run everything (future expansion)
+ansible-playbook -i inventory/workstation.ini playbooks/site.yml

@@ -1,0 +1,14 @@
+- name: Set default UMASK in /etc/login.defs
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: "^UMASK\\b"
+    line: "UMASK {{ default_umask | default('027') }}"
+  when: set_default_umask | default(false) | bool
+
+- name: Ensure /etc/bashrc sets stricter umask for interactive shells
+  ansible.builtin.blockinfile:
+    path: /etc/bashrc
+    marker: "# {mark} ANSIBLE baseline umask"
+    block: |
+      umask {{ default_umask | default('027') }}
+  when: set_default_umask | default(false) | bool
