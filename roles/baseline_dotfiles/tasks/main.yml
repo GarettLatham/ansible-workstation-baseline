@@ -1,0 +1,160 @@
+---
+- name: Set dotfiles home/user
+  set_fact:
+    dotfiles_home: "/home/user1"
+    dotfiles_user: "user1"
+
+############################################################
+# Ensure base directories exist
+############################################################
+
+- name: Ensure ~/.config exists
+  file:
+    path: "{{ dotfiles_home }}/.config"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+
+- name: Ensure app config directories exist
+  file:
+    path: "{{ dotfiles_home }}/.config/{{ item }}"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+  loop:
+    - git
+    - nvim
+    - sway
+    - waybar
+
+- name: Ensure ~/.ssh exists
+  file:
+    path: "{{ dotfiles_home }}/.ssh"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0700"
+
+############################################################
+# Git config (XDG style) — only if present in role
+############################################################
+
+- name: Check if role git config exists
+  stat:
+    path: "{{ role_path }}/files/config/git/config"
+  register: role_gitconfig
+
+- name: Install git config
+  copy:
+    src: config/git/config
+    dest: "{{ dotfiles_home }}/.config/git/config"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  when: role_gitconfig.stat.exists
+
+############################################################
+# tmux — only if present
+############################################################
+
+- name: Check if role tmux config exists
+  stat:
+    path: "{{ role_path }}/files/tmux/.tmux.conf"
+  register: role_tmux
+
+- name: Install .tmux.conf
+  copy:
+    src: tmux/.tmux.conf
+    dest: "{{ dotfiles_home }}/.tmux.conf"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  when: role_tmux.stat.exists
+
+############################################################
+# SSH config — safe (no keys) — only if present
+############################################################
+
+- name: Check if role ssh config exists
+  stat:
+    path: "{{ role_path }}/files/ssh/config"
+  register: role_ssh
+
+- name: Install SSH config
+  copy:
+    src: ssh/config
+    dest: "{{ dotfiles_home }}/.ssh/config"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0600"
+  when: role_ssh.stat.exists
+
+############################################################
+# Neovim config — only if present
+############################################################
+
+- name: Check if role nvim config exists
+  stat:
+    path: "{{ role_path }}/files/nvim"
+  register: role_nvim
+
+- name: Install Neovim config
+  copy:
+    src: nvim/
+    dest: "{{ dotfiles_home }}/.config/nvim/"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+  when: role_nvim.stat.exists
+
+############################################################
+# Sway
+############################################################
+
+- name: Check if sway config exists
+  stat:
+    path: "{{ role_path }}/files/config/sway/config"
+  register: role_sway
+
+- name: Install sway config
+  copy:
+    src: config/sway/config
+    dest: "{{ dotfiles_home }}/.config/sway/config"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  when: role_sway.stat.exists
+
+############################################################
+# Waybar
+############################################################
+
+- name: Check if waybar config exists
+  stat:
+    path: "{{ role_path }}/files/config/waybar/config.jsonc"
+  register: role_waybar_cfg
+
+- name: Install waybar config
+  copy:
+    src: config/waybar/config.jsonc
+    dest: "{{ dotfiles_home }}/.config/waybar/config.jsonc"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  when: role_waybar_cfg.stat.exists
+
+- name: Check if waybar style exists
+  stat:
+    path: "{{ role_path }}/files/config/waybar/style.css"
+  register: role_waybar_style
+
+- name: Install waybar style
+  copy:
+    src: config/waybar/style.css
+    dest: "{{ dotfiles_home }}/.config/waybar/style.css"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  when: role_waybar_style.stat.exists

@@ -1,0 +1,9 @@
+[user]
+  name = Garett Latham
+  email = github.crewmanb140@passmail.com
+[init]
+  defaultBranch = main
+[core]
+  editor = nvim
+[pull]
+  rebase = true

@@ -1,0 +1,4 @@
+---
+- name: Reload user shell env
+  debug:
+    msg: "Dotfiles updated. Restart your shell/session to pick up changes."

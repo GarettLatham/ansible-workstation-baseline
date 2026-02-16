@@ -10,3 +10,22 @@ id_rsa*
 
 # OS
 .DS_Store
+
+# Never commit secrets
+**/.ssh/id_*
+**/.ssh/*.pem
+**/.gnupg/
+**/*vault_pass*
+
+# Never commit user state / secrets
+**/kdeconnect/**
+**/pulse/**
+**/dconf/**
+**/libaccounts-glib/**
+**/mozilla/**
+**/akonadi/**
+**/libreoffice/**
+**/*.pem
+**/cookie
+**/*.db
+**/*.db-*

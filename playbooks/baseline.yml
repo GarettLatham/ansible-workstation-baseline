@@ -15,3 +15,5 @@
     - baseline_umask
     - baseline_integrity_aide
     - baseline_malware_scanner
+    - role: baseline_dotfiles
+      tags: [dotfiles]
