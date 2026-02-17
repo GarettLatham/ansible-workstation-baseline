@@ -73,6 +73,23 @@
     mode: "0644"
   when: role_tmux.stat.exists
 
+- name: Ensure ~/.tmux/plugins exists
+  file:
+    path: "{{ dotfiles_home }}/.tmux/plugins"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+
+- name: Install TPM (tmux plugin manager)
+  git:
+    repo: "https://github.com/tmux-plugins/tpm.git"
+    dest: "{{ dotfiles_home }}/.tmux/plugins/tpm"
+    version: "master"
+    update: true
+  become: true
+  become_user: "{{ dotfiles_user }}"
+
 ############################################################
 # SSH config — safe (no keys) — only if present
 ############################################################

@@ -21,6 +21,16 @@ if [[ -d ~/.zshrc.d ]]; then
   unset rc
 fi
 
+# Auto-start tmux for interactive shells (skip inside tmux, scp, etc.)
+if [[ -o interactive ]] && [[ -z "$TMUX" ]] && command -v tmux >/dev/null; then
+  case "$TERM" in
+    dumb) ;; # don't start tmux
+    *)
+      tmux new-session -A -s main
+      ;;
+  esac
+fi
+
 # History
 HISTFILE=~/.zsh_history
 HISTSIZE=10000

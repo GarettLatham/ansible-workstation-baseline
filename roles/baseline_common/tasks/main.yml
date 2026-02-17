@@ -9,6 +9,12 @@
       - zsh
       - tmux
       - neovim
+      - fastfetch
+      - git
+      - ripgrep
+      - fzf
+      - zsh-autosuggestions
+      - zsh-syntax-highlighting
     state: present
 
 - name: Ensure chronyd is enabled (time sync)
