@@ -1,8 +1,8 @@
 ---
-- name: Set dotfiles home/user
-  set_fact:
-    dotfiles_home: "/home/user1"
-    dotfiles_user: "user1"
+#- name: Set dotfiles home/user
+#  set_fact:
+#    dotfiles_home: "/home/user1"
+#    dotfiles_user: "user1"
 
 ############################################################
 # Ensure base directories exist
@@ -46,16 +46,24 @@
     path: "{{ role_path }}/files/config/git/config"
   register: role_gitconfig
 
-- name: Install git config
-  copy:
-    src: config/git/config
+#- name: Install git config
+#  copy:
+#    src: config/git/config
+#    dest: "{{ dotfiles_home }}/.config/git/config"
+#    owner: "{{ dotfiles_user }}"
+#    group: "{{ dotfiles_user }}"
+#    mode: "0644"
+#  when: role_gitconfig.stat.exists
+
+- name: Install git config (templated)
+  template:
+    src: config/git/config.j2
     dest: "{{ dotfiles_home }}/.config/git/config"
     owner: "{{ dotfiles_user }}"
     group: "{{ dotfiles_user }}"
     mode: "0644"
-  when: role_gitconfig.stat.exists
 
-############################################################
+###################[defaults]#########################################
 # tmux — only if present
 ############################################################
 
@@ -125,6 +133,14 @@
     group: "{{ dotfiles_user }}"
     mode: "0755"
   when: role_nvim.stat.exists
+
+- name: Ensure Neovim data directory exists
+  file:
+    path: "{{ dotfiles_home }}/.local/share/nvim"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
 
 ############################################################
 # Sway
@@ -215,3 +231,22 @@
     group: "{{ dotfiles_user }}"
     mode: "0644"
   when: role_alacritty.stat.exists
+
+- name: Clone private overlay repo (optional)
+  git:
+    repo: "{{ private_overlay_repo }}"
+    dest: "{{ private_overlay_dest }}"
+    version: "{{ private_overlay_branch | default('main') }}"
+    update: true
+  become: true
+  become_user: "{{ dotfiles_user }}"
+  when: private_overlay_repo is defined and private_overlay_repo | length > 0
+  ignore_errors: true
+
+- name: Apply private overlay (optional)
+  command: >
+    rsync -a --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r
+    "{{ private_overlay_dest }}/" "{{ dotfiles_home }}/"
+  become: true
+  when: private_overlay_repo is defined and private_overlay_repo | length > 0
+  ignore_errors: true
