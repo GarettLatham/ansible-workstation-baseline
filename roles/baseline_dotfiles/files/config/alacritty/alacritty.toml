@@ -2,3 +2,6 @@
 [terminal.shell]
 program = "/bin/zsh"
 args = ["-l"]
+
+[selection]
+save_to_clipboard = true

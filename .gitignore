@@ -16,6 +16,8 @@ id_rsa*
 **/.ssh/*.pem
 **/.gnupg/
 **/*vault_pass*
+.secrets/
+
 
 # Never commit user state / secrets
 **/kdeconnect/**

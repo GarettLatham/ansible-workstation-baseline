@@ -1,5 +1,16 @@
 ---
-#- name: Set dotfiles home/user
+# roles/baseline_dotfiles/tasks/main.yml
+
+# ------------------------------------------------------------
+# Dotfiles role: deploy safe dotfiles into {{ dotfiles_home }}
+# Privilege model:
+#   - run privileged file writes with become:true (so we can set owner/mode)
+#   - run git clones inside home with become_user to avoid root-owned files
+#   - avoid become where not needed (stat, logic)
+# ------------------------------------------------------------
+
+# Uncomment if you are NOT defining these elsewhere.
+#- name: Set dotfiles home/user (defaults)
 #  set_fact:
 #    dotfiles_home: "/home/user1"
 #    dotfiles_user: "user1"
@@ -8,13 +19,20 @@
 # Ensure base directories exist
 ############################################################
 
-- name: Ensure ~/.config exists
+- name: Ensure base directories exist (~/.config, ~/.ssh, ~/.local/share)
   file:
-    path: "{{ dotfiles_home }}/.config"
+    path: "{{ item.path }}"
     state: directory
     owner: "{{ dotfiles_user }}"
     group: "{{ dotfiles_user }}"
-    mode: "0755"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ dotfiles_home }}/.config",            mode: "0755" }
+    - { path: "{{ dotfiles_home }}/.ssh",               mode: "0700" }
+    - { path: "{{ dotfiles_home }}/.local",             mode: "0755" }
+    - { path: "{{ dotfiles_home }}/.local/share",       mode: "0755" }
+    - { path: "{{ dotfiles_home }}/.local/share/nvim",  mode: "0755" }
+  become: true
 
 - name: Ensure app config directories exist
   file:
@@ -24,36 +42,21 @@
     group: "{{ dotfiles_user }}"
     mode: "0755"
   loop:
+    - alacritty
     - git
     - nvim
     - sway
     - waybar
-
-- name: Ensure ~/.ssh exists
-  file:
-    path: "{{ dotfiles_home }}/.ssh"
-    state: directory
-    owner: "{{ dotfiles_user }}"
-    group: "{{ dotfiles_user }}"
-    mode: "0700"
+  become: true
 
 ############################################################
-# Git config (XDG style) — only if present in role
+# Git config (XDG style) — templated
 ############################################################
 
-- name: Check if role git config exists
+- name: Check if role git template exists
   stat:
-    path: "{{ role_path }}/files/config/git/config"
-  register: role_gitconfig
-
-#- name: Install git config
-#  copy:
-#    src: config/git/config
-#    dest: "{{ dotfiles_home }}/.config/git/config"
-#    owner: "{{ dotfiles_user }}"
-#    group: "{{ dotfiles_user }}"
-#    mode: "0644"
-#  when: role_gitconfig.stat.exists
+    path: "{{ role_path }}/templates/config/git/config.j2"
+  register: role_git_tpl
 
 - name: Install git config (templated)
   template:
@@ -62,42 +65,94 @@
     owner: "{{ dotfiles_user }}"
     group: "{{ dotfiles_user }}"
     mode: "0644"
+  when: role_git_tpl.stat.exists
+  become: true
 
-###################[defaults]#########################################
-# tmux — only if present
+############################################################
+# tmux — config + TPM
 ############################################################
 
-- name: Check if role tmux config exists
-  stat:
-    path: "{{ role_path }}/files/tmux/.tmux.conf"
-  register: role_tmux
+#- name: Check if role tmux config exists
+#  stat:
+#    path: "{{ role_path }}/files/tmux/.tmux.conf"
+#  register: role_tmux
 
-- name: Install .tmux.conf
-  copy:
-    src: tmux/.tmux.conf
-    dest: "{{ dotfiles_home }}/.tmux.conf"
-    owner: "{{ dotfiles_user }}"
-    group: "{{ dotfiles_user }}"
-    mode: "0644"
-  when: role_tmux.stat.exists
+#- name: Install .tmux.conf
+#  copy:
+#    src: tmux/.tmux.conf
+#    dest: "{{ dotfiles_home }}/.tmux.conf"
+#    owner: "{{ dotfiles_user }}"
+#    group: "{{ dotfiles_user }}"
+#    mode: "0644"
+#  when: role_tmux.stat.exists
+#  become: true
+
+#- name: Ensure ~/.tmux/plugins exists
+#  file:
+#    path: "{{ dotfiles_home }}/.tmux/plugins"
+#   state: directory
+#    owner: "{{ dotfiles_user }}"
+#    group: "{{ dotfiles_user }}"
+#    mode: "0755"
+#  become: true
+
+#- name: Install TPM (tmux plugin manager)
+#  git:
+#    repo: "https://github.com/tmux-plugins/tpm.git"
+#    dest: "{{ dotfiles_home }}/.tmux/plugins/tpm"
+#    version: "master"
+#    update: true
+#  become: true
+#  become_user: "{{ dotfiles_user }}"
+
+- name: Ensure tmux is installed
+  ansible.builtin.dnf:
+    name: tmux
+    state: present
+  become: true
 
 - name: Ensure ~/.tmux/plugins exists
-  file:
+  ansible.builtin.file:
     path: "{{ dotfiles_home }}/.tmux/plugins"
     state: directory
     owner: "{{ dotfiles_user }}"
     group: "{{ dotfiles_user }}"
     mode: "0755"
+  become: true
 
 - name: Install TPM (tmux plugin manager)
-  git:
-    repo: "https://github.com/tmux-plugins/tpm.git"
+  ansible.builtin.git:
+    repo: "https://github.com/tmux-plugins/tpm"
     dest: "{{ dotfiles_home }}/.tmux/plugins/tpm"
     version: "master"
     update: true
   become: true
   become_user: "{{ dotfiles_user }}"
 
+- name: Install ~/.tmux.conf
+  ansible.builtin.copy:
+    src: "tmux/.tmux.conf"
+    dest: "{{ dotfiles_home }}/.tmux.conf"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  become: true
+
+- name: Install tmux plugins (non-interactive)
+  ansible.builtin.command: "{{ dotfiles_home }}/.tmux/plugins/tpm/bin/install_plugins"
+  become: true
+  become_user: "{{ dotfiles_user }}"
+  changed_when: false
+  failed_when: false
+
+- name: Reload tmux config if tmux server is running
+  ansible.builtin.shell: |
+    tmux -L default has-session 2>/dev/null && tmux source-file "{{ dotfiles_home }}/.tmux.conf" || true
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: "{{ dotfiles_user }}"
+  changed_when: false
 ############################################################
 # SSH config — safe (no keys) — only if present
 ############################################################
@@ -115,33 +170,84 @@
     group: "{{ dotfiles_user }}"
     mode: "0600"
   when: role_ssh.stat.exists
+  become: true
 
 ############################################################
 # Neovim config — only if present
 ############################################################
 
-- name: Check if role nvim config exists
+#- name: Check if role nvim config exists
+#  stat:
+#    path: "{{ role_path }}/files/nvim"
+#  register: role_nvim
+
+#- name: Install Neovim config
+#  copy:
+#    src: nvim/
+#    dest: "{{ dotfiles_home }}/.config/nvim/"
+#    owner: "{{ dotfiles_user }}"
+#    group: "{{ dotfiles_user }}"
+#    mode: "0755"
+#  when: role_nvim.stat.exists
+#  become: true
+############################################################
+# Neovim config — only if present
+############################################################
+
+- name: Check if role nvim init.lua exists
   stat:
-    path: "{{ role_path }}/files/nvim"
-  register: role_nvim
+    path: "{{ role_path }}/files/nvim/init.lua"
+  register: role_nvim_init
 
-- name: Install Neovim config
-  copy:
-    src: nvim/
-    dest: "{{ dotfiles_home }}/.config/nvim/"
-    owner: "{{ dotfiles_user }}"
-    group: "{{ dotfiles_user }}"
-    mode: "0755"
-  when: role_nvim.stat.exists
-
-- name: Ensure Neovim data directory exists
+- name: Ensure ~/.config/nvim exists
   file:
-    path: "{{ dotfiles_home }}/.local/share/nvim"
+    path: "{{ dotfiles_home }}/.config/nvim"
     state: directory
     owner: "{{ dotfiles_user }}"
     group: "{{ dotfiles_user }}"
     mode: "0755"
+  when: role_nvim_init.stat.exists
+  become: true
 
+- name: Install Neovim init.lua
+  copy:
+    src: nvim/init.lua
+    dest: "{{ dotfiles_home }}/.config/nvim/init.lua"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  when: role_nvim_init.stat.exists
+  become: true
+  notify: Sync Neovim plugins
+
+- name: Deploy Neovim config tree with safe perms
+  command:
+    argv:
+      - rsync
+      - -a
+      - --delete
+      - --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r
+      - "--chown={{ dotfiles_user }}:{{ dotfiles_user }}"
+      - "{{ role_path }}/files/nvim/"
+      - "{{ dotfiles_home }}/.config/nvim/"
+  become: true
+
+- name: Install Neovim plugins (lazy.nvim)
+  become: false
+  shell: |
+    nvim --headless "+Lazy! sync" +qa
+  args:
+    creates: "{{ dotfiles_home }}/.local/share/nvim/lazy"
+
+############################################################
+# Mason
+############################################################
+- name: Run Mason tool installer
+  become: false
+  shell: |
+    nvim --headless "+MasonToolsInstall" +qa
+  args:
+    creates: "{{ dotfiles_home }}/.local/share/nvim/mason"
 ############################################################
 # Sway
 ############################################################
@@ -159,6 +265,7 @@
     group: "{{ dotfiles_user }}"
     mode: "0644"
   when: role_sway.stat.exists
+  become: true
 
 ############################################################
 # Waybar
@@ -177,6 +284,7 @@
     group: "{{ dotfiles_user }}"
     mode: "0644"
   when: role_waybar_cfg.stat.exists
+  become: true
 
 - name: Check if waybar style exists
   stat:
@@ -191,11 +299,18 @@
     group: "{{ dotfiles_user }}"
     mode: "0644"
   when: role_waybar_style.stat.exists
+  become: true
 
-- name: Ensure default shell is zsh for user1
+############################################################
+# Zsh
+############################################################
+
+- name: Ensure default shell is zsh for user
   user:
     name: "{{ dotfiles_user }}"
     shell: /bin/zsh
+  become: true
+
 - name: Check if role zshrc exists
   stat:
     path: "{{ role_path }}/files/zsh/.zshrc"
@@ -209,14 +324,20 @@
     group: "{{ dotfiles_user }}"
     mode: "0644"
   when: role_zshrc.stat.exists
+  become: true
 
-- name: Ensure ~/.config/alacritty exists
+- name: Ensure ~/.zshrc.d exists (snippet loader directory)
   file:
-    path: "{{ dotfiles_home }}/.config/alacritty"
+    path: "{{ dotfiles_home }}/.zshrc.d"
     state: directory
     owner: "{{ dotfiles_user }}"
     group: "{{ dotfiles_user }}"
     mode: "0755"
+  become: true
+
+############################################################
+# Alacritty
+############################################################
 
 - name: Check if alacritty config exists in role
   stat:
@@ -231,6 +352,11 @@
     group: "{{ dotfiles_user }}"
     mode: "0644"
   when: role_alacritty.stat.exists
+  become: true
+
+############################################################
+# Private overlay repo (optional) + apply (optional)
+############################################################
 
 - name: Clone private overlay repo (optional)
   git:
@@ -243,9 +369,12 @@
   when: private_overlay_repo is defined and private_overlay_repo | length > 0
   ignore_errors: true
 
+# Apply overlay as root (so it can write anywhere) but ensure final ownership is user.
 - name: Apply private overlay (optional)
   command: >
-    rsync -a --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r
+    rsync -a
+    --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r
+    --chown={{ dotfiles_user }}:{{ dotfiles_user }}
     "{{ private_overlay_dest }}/" "{{ dotfiles_home }}/"
   become: true
   when: private_overlay_repo is defined and private_overlay_repo | length > 0

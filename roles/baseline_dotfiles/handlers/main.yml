@@ -2,3 +2,14 @@
 - name: Reload user shell env
   debug:
     msg: "Dotfiles updated. Restart your shell/session to pick up changes."
+
+- name: Sync Neovim plugins
+  shell: |
+    if [ -f "{{ dotfiles_home }}/.config/nvim/init.lua" ]; then
+      nvim --headless "+Lazy! sync" +qa || true
+    fi
+  args:
+    executable: /bin/bash
+  become: false
+
+

@@ -11,14 +11,123 @@
       - neovim
       - fastfetch
       - git
+      - lazygit
       - ripgrep
       - fzf
       - zsh-autosuggestions
       - zsh-syntax-highlighting
     state: present
+  become: true
+  tags: [baseline_common]
 
 - name: Ensure chronyd is enabled (time sync)
   ansible.builtin.systemd:
     name: chronyd
     enabled: true
     state: started
+
+- name: Install Neovim tools
+  ansible.builtin.dnf:
+    name:
+      - neovim
+      - ripgrep
+      #      - fd
+      - fd-find
+      - gcc
+      - gcc-c++
+      - make
+      - cmake
+      - unzip
+      - curl
+      - jq
+      - ShellCheck
+      - shfmt
+      #      - tree-sitter
+      #      - tree-sitter-cli
+      - nodejs-npm
+      - npm
+      - nodejs
+      - python3
+      - python3-pip
+      #      - python3-neovim
+      - wl-clipboard
+      - xclip
+    state: present
+  become: true
+
+- name: Install python dev tooling (user)
+  ansible.builtin.pip:
+    name:
+      - ruff
+      - yamllint
+      - ansible-lint
+    extra_args: --user
+    state: present
+
+- name: Install prettier globally
+  community.general.npm:
+    name: prettier
+    global: true
+    state: present
+  become: true
+
+- name: Install lastest tree-sitter-cli (required by nvim-treesitter)
+  command: npm install -g tree-sitter-cli
+  args:
+    creates: /usr/local/bin/tree-sitter
+  become: true
+
+# ------------------------------------------------------------
+# Tree-sitter CLI (>= 0.26.x) for nvim-treesitter
+# Installs to /usr/local/bin/tree-sitter (Fedora repo may lag)
+# ------------------------------------------------------------
+
+- name: Ensure /usr/local/bin is ahead of /usr/bin system-wide
+  copy:
+    dest: /etc/profile.d/00-local-bin-path.sh
+    mode: "0644"
+    content: |
+      export PATH=/usr/local/bin:$PATH
+  become: true
+
+- name: Check existing tree-sitter version (if present)
+  command: /usr/local/bin/tree-sitter --version
+  register: treesitter_existing
+  changed_when: false
+  failed_when: false
+  become: true
+
+- name: Download tree-sitter CLI {{ treesitter_cli_version }} (linux x64)
+  get_url:
+    url: "{{ treesitter_cli_asset_url }}"
+    dest: /tmp/tree-sitter-linux-x64.gz
+    mode: "0644"
+  become: true
+  when: treesitter_existing.rc != 0 or (treesitter_existing.stdout is not search("0\\.26\\."))
+
+- name: Unpack tree-sitter CLI
+  command: gunzip -f /tmp/tree-sitter-linux-x64.gz
+  become: true
+  when: treesitter_existing.rc != 0 or (treesitter_existing.stdout is not search("0\\.26\\."))
+
+- name: Install tree-sitter CLI to /usr/local/bin/tree-sitter
+  copy:
+    src: /tmp/tree-sitter-linux-x64
+    dest: /usr/local/bin/tree-sitter
+    mode: "0755"
+    owner: root
+    group: root
+    remote_src: true
+  become: true
+  when: treesitter_existing.rc != 0 or (treesitter_existing.stdout is not search("0\\.26\\."))
+
+- name: Verify tree-sitter CLI version
+  command: /usr/local/bin/tree-sitter --version
+  register: treesitter_ver
+  changed_when: false
+  become: true
+
+- name: Fail if tree-sitter CLI is not >= 0.26.x
+  fail:
+    msg: "tree-sitter CLI is too old: {{ treesitter_ver.stdout }} (need >= 0.26.x for nvim-treesitter)"
+  when: treesitter_ver.stdout is not search("0\\.26\\.")

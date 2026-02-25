@@ -7,7 +7,7 @@ firewalld_enable_ssh: true
 
 # Services to disable if present (adjust for your laptop)
 services_disabled_by_default:
-  - bluetooth
+#  - bluetooth
   - cups
 
 # Kernel/sysctl baseline (desktop-safe)

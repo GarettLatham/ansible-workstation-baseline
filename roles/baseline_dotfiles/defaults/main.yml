@@ -1,0 +1,3 @@
+---
+dotfiles_user: "user1"
+dotfiles_home: "/home/{{ dotfiles_user }}"

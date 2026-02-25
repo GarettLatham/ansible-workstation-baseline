@@ -1,4 +1,5 @@
 # ~/.zshrc  — bashrc-equivalent
+setopt NULL_GLOB
 
 # Source global definitions
 if [[ -f /etc/zshrc ]]; then
@@ -15,7 +16,7 @@ fi
 
 # User specific aliases and functions (snippet directory)
 if [[ -d ~/.zshrc.d ]]; then
-  for rc in ~/.zshrc.d/*; do
+  for rc in ~/.zshrc.d/*(.N); do
     [[ -f "$rc" ]] && source "$rc"
   done
   unset rc
