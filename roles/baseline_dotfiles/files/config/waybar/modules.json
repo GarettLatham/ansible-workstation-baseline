@@ -1,0 +1,150 @@
+{
+  "sway/workspaces": {
+    "disable-scroll": true,
+    "all-outputs": true,
+    "format": "{name}"
+  },
+  "mpd": {
+    "tooltip": true,
+    "tooltip-format": "{artist} - {album} - {title} - Total Time : {totalTime:%M:%S}",
+    "format": " {elapsedTime:%M:%S}",
+    "format-disconnected": "⚠  Disconnected",
+    "format-stopped": " Not Playing",
+    "format-paused": " Paused",
+    "format-alt": " {remainingTime:%M:%S}",
+    "format-icons": {
+      "playing": "",
+      "paused": ""
+    },
+    "interval": 1
+  },
+  "mpd#2": {
+    "interval": 1,
+    "format": " {artist}"
+  },
+  "mpd#3": {
+    "interval": 1,
+    "format": " {album}"
+  },
+  "mpd#4": {
+    "interval": 1,
+    "format": "󰎆 {title}"
+  },
+  "sway/mode": {
+    "format": "<span style=\"italic\">{}</span>"
+  },
+  "sway/window": {
+    "format": " {}",
+    "max-length": 70
+  },
+  "tray": {
+    "spacing": 10
+  },
+  "clock": {
+    "timezone": "America/New_York",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+    "format-alt": " {:%a %b %d, %Y}",
+    "format": " {:%I:%M %p}"
+  },
+  "cpu": {
+    "interval": 10,
+    "format": " {usage}%"
+  },
+  "memory": {
+    "interval": 10,
+    "format": " {percentage}%"
+  },
+  "disk": {
+    "format": " {percentage_used}%"
+  },
+  "temperature": {
+    "thermal-zone": 4,
+    // "hwmon-path": "/sys/class/hwmon/hwmon1/temp1_input",
+    "critical-threshold": 80,
+    // "format-critical": "{temperatureF}°F ",
+    "format": " {temperatureF}°F"
+  },
+  "backlight": {
+    "format": "{percent}% {icon}",
+    "format-icons": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "on-scroll-up": "brightnessctl set +5%",
+    "on-scroll-down": "brightnessctl set 5%-"
+  },
+  "battery": {
+    "states": {
+      "warning": 30,
+      "critical": 15
+    },
+    "format": "{capacity}% {icon}",
+    "format-charging": "{capacity}% ",
+    "format-plugged": "{capacity}% ",
+    "format-alt": "{time} {icon}",
+    "format-icons": [
+      "",
+      "",
+      "",
+      "",
+      ""
+    ]
+  },
+  "network": {
+    "format-wifi": " {signalStrength}%",
+    "format-ethernet": "󰈀 {ipaddr}",
+    "format-linked": "󰈀 {ifname} (No IP)",
+    "format-disconnected": "⚠ Disconnected",
+    "tooltip-format": "{ifname} via {gwaddr}"
+  },
+  "pulseaudio": {
+    "scroll-step": 5,
+    "format": "{volume}% {icon}",
+    "format-bluetooth": "{volume}% {icon}",
+    "format-muted": "",
+    "format-icons": {
+      "headphone": "",
+      "hands-free": "",
+      "headset": "",
+      "phone": "",
+      "portable": "",
+      "car": "",
+      "default": [
+        "",
+        "",
+        ""
+      ]
+    },
+    "on-click": "pavucontrol"
+  },
+  "custom/keyboard-layout": {
+    "exec": "swaymsg -t get_inputs | awk -F '\"' '/xkb_active_layout_name/ {print $4; exit}'",
+    "interval": 2,
+    "format": " {}"
+  },
+  "custom/launcher": {
+    "format": "",
+    "on-click": "wofi --show drun"
+  },
+  "custom/power": {
+    "format": "⏻",
+    "on-click": "~/.config/waybar/scripts/powermenu.sh"
+  },
+  "custom/swap": {
+    "format": "󰓡",
+    "on-click": "~/.config/waybar/scripts/swap.sh"
+  },
+  "custom/cava-internal": {
+    "exec": "~/.config/waybar/scripts/cava.sh",
+    "return-type": "json",
+    "interval": 1,
+    "format": "{}"
+  }
+}

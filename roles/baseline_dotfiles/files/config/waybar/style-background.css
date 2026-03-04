@@ -31,7 +31,7 @@
 /* The whole bar */
 window#waybar {
   border-bottom: 4px solid shade(@base, 1.1);
-  background-color: shade(#1e1e2e, 0.95);
+  background-color: shade(#1e1e2e, 0.80);
 }
 
 /* Tooltip */
@@ -47,44 +47,29 @@ tooltip label {
 }
 
 /* Workspaces */
-/* ---------- Workspace pills ---------- */
-
 #workspaces {
-  margin: 0 6px;
+  margin: 0 5px;
+  padding: 0 5px;
+  background-color: @base;
+  border-radius: 12px;
 }
 
 #workspaces button {
-  border: 1px solid alpha(@surface0, 0.5);
-  background: transparent;
-  color: @subtext0;
+  padding: 0 8px;
+  margin: 2px 2px;
   border-radius: 10px;
-  padding: 3px 12px;
-  margin: 0 3px;
-  transition: all 0.25s ease;
+  color: @subtext0;
+  background: transparent;
 }
-
-/* Hover effect */
-
-#workspaces button:hover {
-  background: alpha(@surface0, 0.9);
-  color: @text;
-}
-
-/* Active workspace */
 
 #workspaces button.focused {
-  background: alpha(@surface1, 0.95);
-  color: @text;
-  box-shadow:
-    inset 0 -2px @mauve,
-    0 0 8px alpha(@mauve, 0.35);
+  color: @mauve;
+  background-color: @surface0;
 }
 
-/* Urgent window */
-
-#workspaces button.urgent {
-  background: @red;
-  color: @base;
+#workspaces button:hover {
+  background-color: @surface1;
+  color: @text;
 }
 
 /* Left modules */

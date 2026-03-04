@@ -1,0 +1,110 @@
+@import "mocha.css";
+
+/* ---------- Global ---------- */
+* {
+  font-family: "FiraCode Nerd Font", "Noto Sans Mono", monospace;
+  font-size: 13px;
+  min-height: 0;
+}
+
+/* Floating bar container */
+window#waybar {
+  background: transparent;
+}
+
+/* The main bar “pill” */
+#waybar {
+  margin: 10px 12px;
+}
+
+/* Give the bar itself a floating pill look */
+window#waybar>box {
+  background: alpha(@base, 0.85);
+  border: 1px solid alpha(@surface0, 0.9);
+  border-radius: 14px;
+  padding: 6px 10px;
+}
+
+/* ---------- Workspace pills ---------- */
+#workspaces button {
+  background: transparent;
+  color: @subtext0;
+  border-radius: 10px;
+  padding: 3px 10px;
+  margin: 0 3px;
+}
+
+#workspaces button:hover {
+  background: alpha(@surface0, 0.9);
+  color: @text;
+}
+
+#workspaces button.focused {
+  background: alpha(@surface1, 0.95);
+  color: @text;
+  box-shadow: inset 0 -2px @mauve;
+}
+
+#workspaces button.urgent {
+  background: @red;
+  color: @base;
+}
+
+/* ---------- Module pills (the Typecraft look) ---------- */
+/* This targets most common modules */
+#clock,
+#network,
+#pulseaudio,
+#tray,
+#battery,
+#cpu,
+#memory,
+#temperature,
+#idle_inhibitor,
+#backlight,
+#disk,
+#power-profiles-daemon,
+#mode {
+  background: alpha(@surface0, 0.95);
+  color: @text;
+  border-radius: 12px;
+  padding: 4px 10px;
+  margin: 0 6px;
+  border: 1px solid alpha(@surface1, 0.9);
+}
+
+/* Accent coloring (optional but very “Typecraft”) */
+#clock {
+  background: alpha(@surface1, 0.95);
+}
+
+#network {
+  background: alpha(@blue, 0.18);
+  border-color: alpha(@blue, 0.35);
+}
+
+#pulseaudio {
+  background: alpha(@peach, 0.20);
+  border-color: alpha(@peach, 0.40);
+}
+
+#battery.charging,
+#battery.plugged {
+  background: alpha(@green, 0.22);
+  border-color: alpha(@green, 0.45);
+}
+
+#network.disconnected {
+  background: alpha(@red, 0.22);
+  border-color: alpha(@red, 0.45);
+}
+
+/* Tray icon spacing */
+#tray>.passive {
+  -gtk-icon-effect: dim;
+}
+
+#tray>.needs-attention {
+  background: alpha(@red, 0.25);
+  border-radius: 10px;
+}

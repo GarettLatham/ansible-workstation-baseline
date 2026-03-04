@@ -254,45 +254,108 @@
 # Waybar
 ############################################################
 
-- name: Check if waybar config exists
-  stat:
-    path: "{{ role_path }}/files/config/waybar/config.jsonc"
-  register: role_waybar_cfg
+#- name: Check if waybar config exists
+# stat:
+#   path: "{{ role_path }}/files/config/waybar/config.jsonc"
+# register: role_waybar_cfg
 
-- name: Install waybar config
+#- name: Install waybar config
+#  copy:
+#    src: config/waybar/config.jsonc
+#    dest: "{{ dotfiles_home }}/.config/waybar/config.jsonc"
+#    owner: "{{ dotfiles_user }}"
+#    group: "{{ dotfiles_user }}"
+#    mode: "0644"
+#  when: role_waybar_cfg.stat.exists
+#  become: true
+
+#- name: Check if waybar style exists
+# stat:
+#   path: "{{ role_path }}/files/config/waybar/style.css"
+# register: role_waybar_style
+
+#- name: Install waybar style
+# copy:
+#   src: config/waybar/style.css
+#   dest: "{{ dotfiles_home }}/.config/waybar/style.css"
+#   owner: "{{ dotfiles_user }}"
+#   group: "{{ dotfiles_user }}"
+#   mode: "0644"
+# when: role_waybar_style.stat.exists
+# become: true
+
+#- name: Install Catppuccin waybar themes
+#  copy:
+#    src: "config/waybar/themes/"
+#    dest: "{{ dotfiles_home }}/.config/waybar/"
+#    owner: "{{ dotfiles_user }}"
+#    group: "{{ dotfiles_user }}"
+#    mode: "0644"
+#    directory_mode: "0755"
+#  become: true
+
+- name: Ensure ~/.config/waybar exists
+  file:
+    path: "{{ dotfiles_home }}/.config/waybar"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+  become: true
+
+- name: Ensure ~/.config/waybar/scripts exists
+  file:
+    path: "{{ dotfiles_home }}/.config/waybar/scripts"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+  become: true
+
+- name: Install waybar config files (including background variant)
   copy:
-    src: config/waybar/config.jsonc
-    dest: "{{ dotfiles_home }}/.config/waybar/config.jsonc"
+    src: "config/waybar/{{ item }}"
+    dest: "{{ dotfiles_home }}/.config/waybar/{{ item }}"
     owner: "{{ dotfiles_user }}"
     group: "{{ dotfiles_user }}"
     mode: "0644"
-  when: role_waybar_cfg.stat.exists
+  loop:
+    - config
+    - config-background
+    - modules.json
+    - modules-background.json
+    - style.css
+    - style-background.css
+    - colors.css
   become: true
 
-- name: Check if waybar style exists
-  stat:
-    path: "{{ role_path }}/files/config/waybar/style.css"
-  register: role_waybar_style
-
-- name: Install waybar style
+- name: Install waybar scripts
   copy:
-    src: config/waybar/style.css
-    dest: "{{ dotfiles_home }}/.config/waybar/style.css"
+    src: "config/waybar/scripts/"
+    dest: "{{ dotfiles_home }}/.config/waybar/scripts/"
     owner: "{{ dotfiles_user }}"
     group: "{{ dotfiles_user }}"
-    mode: "0644"
-  when: role_waybar_style.stat.exists
+    mode: "0755"
   become: true
 
-- name: Install Catppuccin waybar themes
-  copy:
-    src: "config/waybar/themes/"
-    dest: "{{ dotfiles_home }}/.config/waybar/"
-    owner: "{{ dotfiles_user }}"
-    group: "{{ dotfiles_user }}"
-    mode: "0644"
-    directory_mode: "0755"
-  become: true
+#- name: Validate waybar json configs (local)
+#  command: "python3 -m json.tool {{ role_path }}/files/config/waybar/{{ item }}"
+#  changed_when: false
+#  loop:
+#    - config
+#    - config-background
+#    - modules.json
+#    - modules-background.json
+#  delegate_to: localhost
+
+- name: Restart waybar (best-effort)
+  shell: |
+    pkill -x waybar || true
+    nohup waybar >/dev/null 2>&1 &
+  args:
+    executable: /bin/bash
+  changed_when: false
+  failed_when: false
 
 ############################################################
 # Wofi
