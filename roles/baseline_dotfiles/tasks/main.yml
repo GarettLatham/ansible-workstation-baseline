@@ -9,12 +9,6 @@
 #   - avoid become where not needed (stat, logic)
 # ------------------------------------------------------------
 
-# Uncomment if you are NOT defining these elsewhere.
-#- name: Set dotfiles home/user (defaults)
-#  set_fact:
-#    dotfiles_home: "/home/user1"
-#    dotfiles_user: "user1"
-
 ############################################################
 # Ensure base directories exist
 ############################################################
@@ -27,11 +21,11 @@
     group: "{{ dotfiles_user }}"
     mode: "{{ item.mode }}"
   loop:
-    - { path: "{{ dotfiles_home }}/.config",            mode: "0755" }
-    - { path: "{{ dotfiles_home }}/.ssh",               mode: "0700" }
-    - { path: "{{ dotfiles_home }}/.local",             mode: "0755" }
-    - { path: "{{ dotfiles_home }}/.local/share",       mode: "0755" }
-    - { path: "{{ dotfiles_home }}/.local/share/nvim",  mode: "0755" }
+    - { path: "{{ dotfiles_home }}/.config", mode: "0755" }
+    - { path: "{{ dotfiles_home }}/.ssh", mode: "0700" }
+    - { path: "{{ dotfiles_home }}/.local", mode: "0755" }
+    - { path: "{{ dotfiles_home }}/.local/share", mode: "0755" }
+    - { path: "{{ dotfiles_home }}/.local/share/nvim", mode: "0755" }
   become: true
 
 - name: Ensure app config directories exist
@@ -47,6 +41,10 @@
     - nvim
     - sway
     - waybar
+    - starship
+    - kanshi
+    - wofi
+    - rofi
   become: true
 
 ############################################################
@@ -72,47 +70,23 @@
 # tmux — config + TPM
 ############################################################
 
-#- name: Check if role tmux config exists
-#  stat:
-#    path: "{{ role_path }}/files/tmux/.tmux.conf"
-#  register: role_tmux
+- name: Check if role tmux config exists
+  stat:
+    path: "{{ role_path }}/files/tmux/.tmux.conf"
+  register: role_tmux
 
-#- name: Install .tmux.conf
-#  copy:
-#    src: tmux/.tmux.conf
-#    dest: "{{ dotfiles_home }}/.tmux.conf"
-#    owner: "{{ dotfiles_user }}"
-#    group: "{{ dotfiles_user }}"
-#    mode: "0644"
-#  when: role_tmux.stat.exists
-#  become: true
-
-#- name: Ensure ~/.tmux/plugins exists
-#  file:
-#    path: "{{ dotfiles_home }}/.tmux/plugins"
-#   state: directory
-#    owner: "{{ dotfiles_user }}"
-#    group: "{{ dotfiles_user }}"
-#    mode: "0755"
-#  become: true
-
-#- name: Install TPM (tmux plugin manager)
-#  git:
-#    repo: "https://github.com/tmux-plugins/tpm.git"
-#    dest: "{{ dotfiles_home }}/.tmux/plugins/tpm"
-#    version: "master"
-#    update: true
-#  become: true
-#  become_user: "{{ dotfiles_user }}"
-
-- name: Ensure tmux is installed
-  ansible.builtin.dnf:
-    name: tmux
-    state: present
+- name: Install .tmux.conf
+  copy:
+    src: tmux/.tmux.conf
+    dest: "{{ dotfiles_home }}/.tmux.conf"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  when: role_tmux.stat.exists
   become: true
 
 - name: Ensure ~/.tmux/plugins exists
-  ansible.builtin.file:
+  file:
     path: "{{ dotfiles_home }}/.tmux/plugins"
     state: directory
     owner: "{{ dotfiles_user }}"
@@ -121,38 +95,14 @@
   become: true
 
 - name: Install TPM (tmux plugin manager)
-  ansible.builtin.git:
-    repo: "https://github.com/tmux-plugins/tpm"
+  git:
+    repo: "https://github.com/tmux-plugins/tpm.git"
     dest: "{{ dotfiles_home }}/.tmux/plugins/tpm"
     version: "master"
     update: true
   become: true
   become_user: "{{ dotfiles_user }}"
 
-- name: Install ~/.tmux.conf
-  ansible.builtin.copy:
-    src: "tmux/.tmux.conf"
-    dest: "{{ dotfiles_home }}/.tmux.conf"
-    owner: "{{ dotfiles_user }}"
-    group: "{{ dotfiles_user }}"
-    mode: "0644"
-  become: true
-
-- name: Install tmux plugins (non-interactive)
-  ansible.builtin.command: "{{ dotfiles_home }}/.tmux/plugins/tpm/bin/install_plugins"
-  become: true
-  become_user: "{{ dotfiles_user }}"
-  changed_when: false
-  failed_when: false
-
-- name: Reload tmux config if tmux server is running
-  ansible.builtin.shell: |
-    tmux -L default has-session 2>/dev/null && tmux source-file "{{ dotfiles_home }}/.tmux.conf" || true
-  args:
-    executable: /bin/bash
-  become: true
-  become_user: "{{ dotfiles_user }}"
-  changed_when: false
 ############################################################
 # SSH config — safe (no keys) — only if present
 ############################################################
@@ -176,78 +126,40 @@
 # Neovim config — only if present
 ############################################################
 
-#- name: Check if role nvim config exists
-#  stat:
-#    path: "{{ role_path }}/files/nvim"
-#  register: role_nvim
-
-#- name: Install Neovim config
-#  copy:
-#    src: nvim/
-#    dest: "{{ dotfiles_home }}/.config/nvim/"
-#    owner: "{{ dotfiles_user }}"
-#    group: "{{ dotfiles_user }}"
-#    mode: "0755"
-#  when: role_nvim.stat.exists
-#  become: true
-############################################################
-# Neovim config — only if present
-############################################################
-
-- name: Check if role nvim init.lua exists
+- name: Check if role nvim config exists
   stat:
-    path: "{{ role_path }}/files/nvim/init.lua"
-  register: role_nvim_init
+    path: "{{ role_path }}/files/nvim"
+  register: role_nvim
 
-- name: Ensure ~/.config/nvim exists
-  file:
-    path: "{{ dotfiles_home }}/.config/nvim"
-    state: directory
+- name: Install Neovim config
+  copy:
+    src: nvim/
+    dest: "{{ dotfiles_home }}/.config/nvim/"
     owner: "{{ dotfiles_user }}"
     group: "{{ dotfiles_user }}"
     mode: "0755"
-  when: role_nvim_init.stat.exists
+  when: role_nvim.stat.exists
   become: true
 
-- name: Install Neovim init.lua
+############################################################
+# Kanshi
+############################################################
+
+- name: Check if kanshi config exists
+  stat:
+    path: "{{ role_path }}/files/config/kanshi/config"
+  register: role_kanshi
+
+- name: Install kanshi config
   copy:
-    src: nvim/init.lua
-    dest: "{{ dotfiles_home }}/.config/nvim/init.lua"
+    src: config/kanshi/config
+    dest: "{{ dotfiles_home }}/.config/kanshi/config"
     owner: "{{ dotfiles_user }}"
     group: "{{ dotfiles_user }}"
     mode: "0644"
-  when: role_nvim_init.stat.exists
-  become: true
-  notify: Sync Neovim plugins
-
-- name: Deploy Neovim config tree with safe perms
-  command:
-    argv:
-      - rsync
-      - -a
-      - --delete
-      - --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r
-      - "--chown={{ dotfiles_user }}:{{ dotfiles_user }}"
-      - "{{ role_path }}/files/nvim/"
-      - "{{ dotfiles_home }}/.config/nvim/"
+  when: role_kanshi.stat.exists
   become: true
 
-- name: Install Neovim plugins (lazy.nvim)
-  become: false
-  shell: |
-    nvim --headless "+Lazy! sync" +qa
-  args:
-    creates: "{{ dotfiles_home }}/.local/share/nvim/lazy"
-
-############################################################
-# Mason
-############################################################
-- name: Run Mason tool installer
-  become: false
-  shell: |
-    nvim --headless "+MasonToolsInstall" +qa
-  args:
-    creates: "{{ dotfiles_home }}/.local/share/nvim/mason"
 ############################################################
 # Sway
 ############################################################
@@ -265,6 +177,77 @@
     group: "{{ dotfiles_user }}"
     mode: "0644"
   when: role_sway.stat.exists
+  become: true
+
+- name: Install sway Catppuccin themes
+  copy:
+    src: "config/sway/themes/"
+    dest: "{{ dotfiles_home }}/.config/sway/"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+    directory_mode: "0755"
+  become: true
+
+############################################################
+# Ensure sway wallpaper directory exists
+############################################################
+
+- name: Ensure sway wallpapers dir exists
+  file:
+    path: "{{ dotfiles_home }}/.config/sway/wallpapers"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+  become: true
+
+- name: Install sway wallpaper
+  copy:
+    src: config/sway/wallpapers/black-hole_wallpaper.png
+    dest: "{{ dotfiles_home }}/.config/sway/wallpapers/black-hole_wallpaper.png"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  become: true
+############################################################
+# Sway scripts (powermenu)
+############################################################
+
+- name: Ensure sway scripts dir exists
+  file:
+    path: "{{ dotfiles_home }}/.config/sway/scripts"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+  become: true
+
+- name: Install powermenu script
+  copy:
+    src: config/sway/scripts/powermenu.sh
+    dest: "{{ dotfiles_home }}/.config/sway/scripts/powermenu.sh"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+  become: true
+
+- name: Install ensure_workspaces script
+  copy:
+    src: config/sway/scripts/ensure_workspaces.sh
+    dest: "{{ dotfiles_home }}/.config/sway/scripts/ensure_workspaces.sh"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+  become: true
+
+- name: Install show-keybinds command palette script
+  copy:
+    src: config/sway/scripts/show-keybinds.sh
+    dest: "{{ dotfiles_home }}/.config/sway/scripts/show-keybinds.sh"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
   become: true
 
 ############################################################
@@ -301,6 +284,91 @@
   when: role_waybar_style.stat.exists
   become: true
 
+- name: Install Catppuccin waybar themes
+  copy:
+    src: "config/waybar/themes/"
+    dest: "{{ dotfiles_home }}/.config/waybar/"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+    directory_mode: "0755"
+  become: true
+
+############################################################
+# Wofi
+############################################################
+
+- name: Ensure wofi config dir exists
+  file:
+    path: "{{ dotfiles_home }}/.config/wofi"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+  become: true
+
+- name: Install wofi config
+  copy:
+    src: config/wofi/config
+    dest: "{{ dotfiles_home }}/.config/wofi/config"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  become: true
+
+- name: Install wofi style
+  copy:
+    src: config/wofi/style.css
+    dest: "{{ dotfiles_home }}/.config/wofi/style.css"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  become: true
+
+############################################################
+# Rofi (power menu theme)
+############################################################
+
+- name: Ensure rofi config dir exists
+  file:
+    path: "{{ dotfiles_home }}/.config/rofi"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+  become: true
+
+- name: Install rofi power theme
+  copy:
+    src: config/rofi/power.rasi
+    dest: "{{ dotfiles_home }}/.config/rofi/power.rasi"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  become: true
+
+############################################################
+# Sway scripts (powermenu)
+############################################################
+
+- name: Ensure sway scripts dir exists
+  file:
+    path: "{{ dotfiles_home }}/.config/sway/scripts"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+  become: true
+
+- name: Install powermenu script
+  copy:
+    src: config/sway/scripts/powermenu.sh
+    dest: "{{ dotfiles_home }}/.config/sway/scripts/powermenu.sh"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+  become: true
+
 ############################################################
 # Zsh
 ############################################################
@@ -335,24 +403,148 @@
     mode: "0755"
   become: true
 
+# IMPORTANT: Fix your current "no matches found: ~/.zshrc.d/*" error.
+# This block makes snippet loading safe even when directory is empty.
+- name: Ensure .zshrc loads ~/.zshrc.d snippets safely (prevents glob errors)
+  blockinfile:
+    path: "{{ dotfiles_home }}/.zshrc"
+    marker: "# {mark} ANSIBLE MANAGED: zshrc.d loader"
+    insertafter: EOF
+    block: |
+      # Load snippets from ~/.zshrc.d safely (avoid "no matches found" in zsh)
+      if [ -d "$HOME/.zshrc.d" ]; then
+        setopt null_glob 2>/dev/null || true
+        for f in "$HOME"/.zshrc.d/*.zsh; do
+          [ -r "$f" ] && source "$f"
+        done
+        unsetopt null_glob 2>/dev/null || true
+      fi
+  become: true
+  become_user: "{{ dotfiles_user }}"
+
+############################################################
+# Starship (config + zsh init)
+# NOTE: package install should happen in baseline_common AFTER enabling COPR.
+############################################################
+
+- name: Install starship.toml (full config from role files/)
+  copy:
+    src: "starship/starship.toml" # relative to roles/baseline_dotfiles/files/
+    dest: "{{ dotfiles_home }}/.config/starship.toml"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+    backup: true
+  become: true
+
+- name: Add Starship init snippet to ~/.zshrc.d
+  copy:
+    dest: "{{ dotfiles_home }}/.zshrc.d/50-starship.zsh"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+    content: |
+      # Starship prompt
+      if command -v starship >/dev/null 2>&1; then
+        export STARSHIP_CONFIG="$HOME/.config/starship.toml"
+        eval "$(starship init zsh)"
+      fi
+  become: true
+
 ############################################################
 # Alacritty
 ############################################################
 
-- name: Check if alacritty config exists in role
-  stat:
-    path: "{{ role_path }}/files/config/alacritty/alacritty.toml"
-  register: role_alacritty
+- name: Ensure alacritty config dir exists
+  file:
+    path: "{{ dotfiles_home }}/.config/alacritty"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+  become: true
 
-- name: Install alacritty config
+- name: Install alacritty.toml
   copy:
-    src: config/alacritty/alacritty.toml
+    src: "alacritty/alacritty.toml"
     dest: "{{ dotfiles_home }}/.config/alacritty/alacritty.toml"
     owner: "{{ dotfiles_user }}"
     group: "{{ dotfiles_user }}"
     mode: "0644"
-  when: role_alacritty.stat.exists
+    backup: true
   become: true
+
+- name: Install Catppuccin themes
+  copy:
+    src: "alacritty/themes/"
+    dest: "{{ dotfiles_home }}/.config/alacritty/"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+    directory_mode: "0755"
+  become: true
+
+# ------------------------------------------------------------
+# Konsole: Catppuccin Mocha colorscheme + set profile
+# ------------------------------------------------------------
+- name: Ensure Konsole share directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.local/share/konsole"
+    state: directory
+    mode: "0755"
+
+- name: Ensure cache Konsole directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.cache/konsole/catppuccin-konsole"
+    state: directory
+    mode: "0755"
+
+- name: Ensure cache Konsole directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.cache/konsole/catppuccin-konsole/themes"
+    state: directory
+    mode: "0755"
+
+- name: Fetch Catppuccin Konsole themes
+  ansible.builtin.git:
+    repo: https://github.com/catppuccin/konsole.git
+    dest: ~/.cache/konsole/catppuccin-konsole
+    version: main
+    depth: 1
+
+# The repo layout can vary; we copy everything that looks like a colorscheme.
+- name: Install Catppuccin Konsole color schemes
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ ansible_env.HOME }}/.local/share/konsole/{{ item | basename }}"
+    mode: "0644"
+    remote_src: true
+  with_fileglob:
+    - "~/.cache/konsole/catppuccin-konsole/*.colorscheme"
+    - "~/.cache/konsole/catppuccin-konsole/themes/*.colorscheme"
+  ignore_errors: true
+
+# Create/modify a profile that uses Catppuccin Mocha
+- name: Create default Konsole profile using Catppuccin Mocha
+  ansible.builtin.copy:
+    dest: "{{ ansible_env.HOME }}/.local/share/konsole/catppuccin-mocha.profile"
+    mode: "0644"
+    content: |
+      [Appearance]
+      ColorScheme=Catppuccin Mocha
+
+      [General]
+      Name=Catppuccin Mocha
+      Parent=FALLBACK/
+
+- name: Set Konsole default profile
+  ansible.builtin.ini_file:
+    path: "{{ ansible_env.HOME }}/.config/konsolerc"
+    section: "Desktop Entry"
+    option: "DefaultProfile"
+    value: "catppuccin-mocha.profile"
+    mode: "0644"
+    create: true
 
 ############################################################
 # Private overlay repo (optional) + apply (optional)
@@ -364,18 +556,52 @@
     dest: "{{ private_overlay_dest }}"
     version: "{{ private_overlay_branch | default('main') }}"
     update: true
+  when:
+    - private_overlay_repo is defined
+    - private_overlay_dest is defined
+    - private_overlay_repo | length > 0
   become: true
   become_user: "{{ dotfiles_user }}"
-  when: private_overlay_repo is defined and private_overlay_repo | length > 0
-  ignore_errors: true
 
-# Apply overlay as root (so it can write anywhere) but ensure final ownership is user.
 - name: Apply private overlay (optional)
   command: >
-    rsync -a
-    --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r
+    rsync -a --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r
     --chown={{ dotfiles_user }}:{{ dotfiles_user }}
-    "{{ private_overlay_dest }}/" "{{ dotfiles_home }}/"
+    "{{ private_overlay_dest }}/"
+    "{{ dotfiles_home }}/"
+  args:
+    creates: "{{ dotfiles_home }}/.private_overlay_applied"
+  when:
+    - private_overlay_dest is defined
+    - private_overlay_dest | length > 0
   become: true
-  when: private_overlay_repo is defined and private_overlay_repo | length > 0
-  ignore_errors: true
+
+- name: Mark private overlay applied (optional)
+  file:
+    path: "{{ dotfiles_home }}/.private_overlay_applied"
+    state: touch
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  when:
+    - private_overlay_dest is defined
+    - private_overlay_dest | length > 0
+  become: true
+
+- name: Ensure fastfetch config dir exists
+  file:
+    path: "{{ dotfiles_home }}/.config/fastfetch"
+    state: directory
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0755"
+  become: true
+
+- name: Install fastfetch config
+  copy:
+    src: config/fastfetch/config.jsonc
+    dest: "{{ dotfiles_home }}/.config/fastfetch/config.jsonc"
+    owner: "{{ dotfiles_user }}"
+    group: "{{ dotfiles_user }}"
+    mode: "0644"
+  become: true

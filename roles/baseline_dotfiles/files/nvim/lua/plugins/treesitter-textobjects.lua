@@ -1,4 +1,10 @@
-{
+local M = {}
+
+M.setup = function(_, opts)
+require("conform").setup(opts)
+end
+
+return {
     "nvim-treesitter/nvim-treesitter-textobjects",
     branch = "main",
     event = "VeryLazy",

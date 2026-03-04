@@ -1,0 +1,30 @@
+window {
+    background-color: #1e1e2e;
+    border-radius: 14px;
+    border: 2px solid #cba6f7;
+    font-family: "Hack Nerd Font";
+    font-size: 14px;
+}
+
+#input {
+margin: 12px;
+padding: 10px;
+border-radius: 8px;
+border: none;
+background-color: #313244;
+color: #cdd6f4;
+}
+
+#entry {
+padding: 10px;
+border-radius: 8px;
+}
+
+#entry:selected {
+background-color: #45475a;
+color: #cba6f7;
+}
+
+#text {
+color: #cdd6f4;
+}

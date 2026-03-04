@@ -1,0 +1,32 @@
+configuration {
+  show-icons: true;
+}
+
+* {
+  font: "Hack Nerd Font 18";
+  background: #1e1e2e;
+  foreground: #cdd6f4;
+}
+
+window {
+  width: 800px;
+  border: 2px;
+  border-color: #cba6f7;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+listview {
+  layout: horizontal;
+  spacing: 20px;
+}
+
+element {
+  padding: 20px;
+  border-radius: 12px;
+}
+
+element selected {
+  background-color: #45475a;
+  text-color: #cba6f7;
+}

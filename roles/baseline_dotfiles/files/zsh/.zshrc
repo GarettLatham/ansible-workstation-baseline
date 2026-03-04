@@ -45,13 +45,17 @@ setopt CORRECT
 setopt INTERACTIVE_COMMENTS
 
 # Prompt
-autoload -Uz promptinit && promptinit
-prompt adam1
+#autoload -Uz promptinit && promptinit
+#prompt adam1
 
 # Aliases
 alias ll='ls -lah'
 alias v='nvim'
 alias gs='git status'
 
+#Starship
+#eval "$(starship init zsh)"
+export TERM_PROGRAM=alacritty
+export PATH="$HOME/.cargo/bin:$PATH"
 # fastfetch
 command -v fastfetch >/dev/null && fastfetch

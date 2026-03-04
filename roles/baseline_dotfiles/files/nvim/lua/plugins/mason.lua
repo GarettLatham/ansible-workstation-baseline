@@ -1,4 +1,4 @@
-{
+return {
 
     "mason-org/mason.nvim",
     cmd = "Mason",
@@ -9,6 +9,7 @@
         ensure_installed = {
             "stylua",
             "shfmt",
+            "ansible-lint",
         },
     },
     ---@param opts MasonSettings | {ensure_installed: string[]}

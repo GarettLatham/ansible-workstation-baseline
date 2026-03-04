@@ -1,4 +1,4 @@
-{
+return {
   "nvim-lualine/lualine.nvim",
   event = "VeryLazy",
   init = function()

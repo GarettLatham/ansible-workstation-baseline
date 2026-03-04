@@ -1,4 +1,4 @@
-{
+return {
   "mfussenegger/nvim-lint",
   event = "LazyFile",
   opts = {

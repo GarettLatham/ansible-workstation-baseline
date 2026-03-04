@@ -1,0 +1,13 @@
+profile undocked {
+  output eDP-1 enable scale 1
+}
+
+profile docked {
+  output eDP-1 disable
+  output DP-3 position 0,0
+  output DP-5 position 1920,0
+
+  # Pin workspaces ONLY when docked
+  #workspace 1 output DP-3
+  #workspace 2 output DP-5
+}

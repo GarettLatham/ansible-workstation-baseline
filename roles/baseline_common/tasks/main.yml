@@ -1,3 +1,40 @@
+############################################################
+# Starship prompt (with COPR)
+############################################################
+
+- name: Enable Starship COPR repository
+  become: true
+  command: dnf -y copr enable atim/starship
+  args:
+    creates: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:atim:starship.repo
+
+# Idempotent COPR enable (guarded by repo file existence)
+- name: Check if nerd-fonts COPR repo is already enabled
+  ansible.builtin.stat:
+    path: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:aquacash5:nerd-fonts.repo
+  register: nerd_fonts_repo
+  become: true
+
+- name: Enable aquacash5/nerd-fonts COPR repo
+  ansible.builtin.command: dnf -y copr enable aquacash5/nerd-fonts
+  args:
+    creates: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:aquacash5:nerd-fonts.repo
+  when: not nerd_fonts_repo.stat.exists
+  become: true
+
+- name: Install Nerd Fonts packages
+  ansible.builtin.dnf:
+    name:
+      - fira-code-nerd-fonts, hack-nerd-fonts
+    state: present
+  become: true
+
+- name: Install Starship prompt
+  become: true
+  dnf:
+    name: starship
+    state: present
+
 - name: Ensure baseline packages are installed
   ansible.builtin.dnf:
     name:
@@ -6,16 +43,13 @@
       - firewalld
       - audit
       - chrony
-      - zsh
-      - tmux
-      - neovim
       - fastfetch
       - git
-      - lazygit
+      #      - lazygit
       - ripgrep
       - fzf
-      - zsh-autosuggestions
-      - zsh-syntax-highlighting
+      - kanshi
+      - starship
     state: present
   become: true
   tags: [baseline_common]
@@ -25,6 +59,18 @@
     name: chronyd
     enabled: true
     state: started
+
+- name: Install shell packages
+  become: true
+  ansible.builtin.dnf:
+    name:
+      - zsh
+      - zsh-autosuggestions
+      - zsh-syntax-highlighting
+      - tmux
+      - util-linux-user # provides chsh on some systems
+      - fira-code-nerd-fonts
+    state: present
 
 - name: Install Neovim tools
   ansible.builtin.dnf:
@@ -52,6 +98,8 @@
       #      - python3-neovim
       - wl-clipboard
       - xclip
+      - rust
+      - cargo
     state: present
   become: true
 
@@ -68,6 +116,26 @@
   community.general.npm:
     name: prettier
     global: true
+    state: present
+  become: true
+
+- name: Install Sway ecosystem packages
+  dnf:
+    name:
+      - sway
+      - waybar
+      - wofi
+      - rofi-wayland
+      - swaylock
+      - kanshi
+      - pamixer
+      - playerctl
+      - brightnessctl
+      - grim
+      - slurp
+      - wl-clipboard
+      - swaybg
+      - wlsunset
     state: present
   become: true
 

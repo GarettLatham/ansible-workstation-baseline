@@ -1,0 +1,7 @@
+show=drun
+prompt=Search...
+width=600
+height=500
+location=center
+allow_images=true
+term=alacritty
