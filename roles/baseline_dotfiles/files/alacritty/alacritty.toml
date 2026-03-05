@@ -35,3 +35,5 @@ style = "Italic"
 family = "Hack Nerd Font"
 style = "Regular"
 
+[window]
+opacity = 0.9
